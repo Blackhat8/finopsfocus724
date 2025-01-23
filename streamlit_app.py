@@ -8,88 +8,89 @@ from plotly.subplots import make_subplots
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+import io
 
 # Configuración de la página
 st.set_page_config(
-    page_title="TI724 FinOps Dashboard",
-    layout="wide",
-    initial_sidebar_state="collapsed"
+  page_title="TI724 FinOps Dashboard",
+  layout="wide",
+  initial_sidebar_state="collapsed"
 )
 
 # CSS personalizado mejorado
 st.markdown("""
-    <style>
-    .main {
-        padding: 2rem;
-        background-color: #f8f9fa;
-    }
-    .stPlotlyChart {
-        background-color: white;
-        border-radius: 15px;
-        padding: 1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-    }
-    .stPlotlyChart:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.15);
-    }
-    .metric-card {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        transition: all 0.3s ease;
-    }
-    .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 8px rgba(0,0,0,0.1);
-    }
-    .recommendation {
-        background-color: #e9ecef;
-        padding: 1.5rem;
-        border-radius: 15px;
-        margin-bottom: 1rem;
-        border-left: 5px solid #007bff;
-        transition: all 0.3s ease;
-    }
-    .recommendation:hover {
-        transform: translateX(5px);
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .stMetric {
-        background-color: white;
-        padding: 1.5rem;
-        border-radius: 15px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    }
-    .stTabs {
-        background-color: white;
-        border-radius: 15px;
-        padding: 1rem;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .stTab {
-        border-radius: 10px;
-    }
-    .stTab[data-baseweb="tab"] {
-        height: 60px;
-        white-space: pre-wrap;
-        background-color: #f1f3f5;
-        transition: all 0.3s ease;
-    }
-    .stTab[aria-selected="true"] {
-        background-color: #007bff;
-        color: white;
-    }
-    .stTab:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    h1, h2, h3 {
-        color: #2c3e50;
-    }
-    </style>
+  <style>
+  .main {
+      padding: 2rem;
+      background-color: #f8f9fa;
+  }
+  .stPlotlyChart {
+      background-color: white;
+      border-radius: 15px;
+      padding: 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      transition: all 0.3s ease;
+  }
+  .stPlotlyChart:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 8px rgba(0,0,0,0.15);
+  }
+  .metric-card {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+      transition: all 0.3s ease;
+  }
+  .metric-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 8px rgba(0,0,0,0.1);
+  }
+  .recommendation {
+      background-color: #e9ecef;
+      padding: 1.5rem;
+      border-radius: 15px;
+      margin-bottom: 1rem;
+      border-left: 5px solid #007bff;
+      transition: all 0.3s ease;
+  }
+  .recommendation:hover {
+      transform: translateX(5px);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .stMetric {
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 15px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  .stTabs {
+      background-color: white;
+      border-radius: 15px;
+      padding: 1rem;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+  }
+  .stTab {
+      border-radius: 10px;
+  }
+  .stTab[data-baseweb="tab"] {
+      height: 60px;
+      white-space: pre-wrap;
+      background-color: #f1f3f5;
+      transition: all 0.3s ease;
+  }
+  .stTab[aria-selected="true"] {
+      background-color: #007bff;
+      color: white;
+  }
+  .stTab:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  h1, h2, h3 {
+      color: #2c3e50;
+  }
+  </style>
 """, unsafe_allow_html=True)
 
 # Título y descripción
@@ -97,11 +98,21 @@ st.title("📊 TI724 - Panel de Control FinOps Avanzado")
 st.markdown("Sistema de Análisis y Optimización de Costos en la Nube")
 st.markdown("---")
 
+# Datos de ejemplo (reemplaza esto con tus datos reales)
+data = """
+BillingPeriodStart,BilledCost,ChargeDescription,ResourceId,x_SkuRegion,ChargeClass
+2023-01-01,100.50,Compute Instance,instance-001,us-east-1,Usage
+2023-01-02,150.75,Object Storage,bucket-001,us-west-2,Usage
+2023-01-03,75.25,Block Storage,volume-001,eu-west-1,Usage
+2023-01-04,200.00,Data Transfer,transfer-001,ap-southeast-1,Usage
+2023-01-05,125.30,Managed Database,db-001,us-east-2,Usage
+"""
+
 # Función para cargar datos
 @st.cache_data
 def cargar_datos():
     try:
-        df = pd.read_csv('Datos/part_0_0001.csv', low_memory=False)
+        df = pd.read_csv(io.StringIO(data))
         df['Fecha'] = pd.to_datetime(df['BillingPeriodStart'])
         df['BilledCost'] = pd.to_numeric(df['BilledCost'], errors='coerce')
         return df
@@ -115,7 +126,7 @@ with st.spinner('Cargando datos...'):
     if df is not None:
         st.success("Datos cargados exitosamente!")
     else:
-        st.error("No se pudieron cargar los datos. Por favor, verifica el archivo de datos.")
+        st.error("No se pudieron cargar los datos. Por favor, verifica los datos internos.")
         st.stop()
 
 # Cálculos FinOps mejorados
